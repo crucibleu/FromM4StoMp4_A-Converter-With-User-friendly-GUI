@@ -1,0 +1,19 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "M4S Converter",
+  "outputfilename": "m4s-converter",
+  "frontend:install": "npm ci",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "crucibleu"
+  },
+  "info": {
+    "companyName": "m4s-converter",
+    "productName": "M4S Converter",
+    "productVersion": "1.0.0",
+    "copyright": "MIT License",
+    "comments": "Convert Bilibili m4s cache to mp4"
+  }
+}
