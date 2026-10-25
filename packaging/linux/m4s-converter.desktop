@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=M4S Converter
+Name[zh_CN]=M4S 转换器
+Comment=Convert Bilibili m4s cache to mp4 and play it
+Comment[zh_CN]=把 B 站缓存的 m4s 转换为 mp4 并播放
+Exec=m4s-converter
+Icon=m4s-converter
+Terminal=false
+Categories=AudioVideo;Video;Utility;

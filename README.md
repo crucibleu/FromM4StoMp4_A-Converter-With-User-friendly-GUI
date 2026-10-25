@@ -12,12 +12,31 @@ bilibili下架了很多视频，之前收藏和缓存的视频均无法播放
 - https://github.com/mzky/m4s-converter/releases/latest
 
 
-### 图形界面版本（Windows / Linux）
-- 双击 `m4s-converter-gui-amd64.exe`（Windows）或 `m4s-converter-gui-linux_amd64`（Linux）即可打开窗口，无需命令行
-- 选择 BiliBili 缓存目录（默认 `视频/bilibili`），点击「开始合成」，完成后可直接打开输出目录
-- 支持弹幕生成、覆盖已合成视频、汇总未合并文件、自定义 MP4Box 等选项，界面随系统语言显示中文或英文
-- 内置 MP4Box，无需另外安装；Linux 选择目录时优先使用系统的 zenity 对话框
-- 编译：`./build-gui.sh`（依赖见脚本内说明，GUI 基于 [Fyne](https://fyne.io)，需要 CGO）
+### 图形界面版本 M4S Converter（Windows / Linux）
+双击即可使用，不需要命令行。
+
+- **视频库**：自动扫描 B 站缓存目录（电脑客户端和安卓客户端），按合集分组显示封面、分P、时长、分辨率、编码和状态；可以搜索、筛选，单选、按合集全选或按住 Shift 连选
+- **只转换选中的视频**，并且可以自由选择输出文件夹和文件命名方式（例如 `合集-UP主/分P.mp4`）
+- **转换前预览**：直接播放缓存中的音视频，不需要先转换，也会显示弹幕
+- **转换队列**：同时转换 1-4 个视频，显示每个视频的进度、写入速度和剩余时间，失败可以重试
+- **内置播放器**：播放输出目录中的视频，记住播放进度、自动播放下一集，支持弹幕叠加（可调透明度、密度、字号）和快捷键；程序内无法解码的视频（例如部分电脑上的 HEVC）可一键用系统播放器打开
+- 输出的 mp4 写入标题、UP主、合集等信息，旁边保存 `.xml`（本程序播放用）和 `.ass`（其他播放器用）弹幕文件
+- 深色科技风界面，带粒子与过渡动画；动画可在设置中切换为完整 / 精简 / 关闭，播放视频时自动暂停
+- 界面随系统语言显示中文或英文；内置 MP4Box，无需另外安装
+
+**下载**：在 [Releases](https://github.com/crucibleu/FromM4StoMp4_A-Converter-With-User-friendly-GUI/releases) 页面下载
+- Windows：`*-windows-amd64-setup.exe`（安装版）或 `*-portable.exe`（免安装）。需要 WebView2，Windows 10/11 已自带，安装版会在缺少时自动安装
+- Linux：`.deb`（Debian/Ubuntu）或 `.tar.gz`（其他发行版，需要 WebKitGTK 4.1 和 GStreamer，见压缩包内说明）
+
+**自行编译**：图形界面位于 `app/`，基于 [Wails v2](https://wails.io) + Vue 3
+```bash
+go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0
+cd app && wails build                     # Windows
+cd app && wails build -tags webkit2_41    # Linux，需要 libgtk-3-dev libwebkit2gtk-4.1-dev
+```
+推送 `v1.0.0` 这样的标签后，GitHub Actions 会自动构建并发布上述安装包。
+
+> **English:** `app/` is a desktop GUI for Windows and Linux. It browses your Bilibili cache, converts only the videos you pick to any folder with your own naming pattern, previews them before converting, and plays the results with danmaku. Download it from Releases, or build it with `wails build` (add `-tags webkit2_41` on Linux).
 
 
 ### Android手机端合并文件方法 

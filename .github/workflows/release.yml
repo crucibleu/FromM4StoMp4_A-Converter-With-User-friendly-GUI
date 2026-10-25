@@ -1,0 +1,84 @@
+name: Release
+
+# 推送 v 开头的标签（例如 v1.0.0）时构建安装包并发布到 GitHub Releases
+on:
+  push:
+    tags: [ "v*" ]
+
+permissions:
+  contents: write
+
+env:
+  WAILS_VERSION: v2.17.0
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install system libraries
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
+      - name: Build
+        working-directory: app
+        run: wails build -tags webkit2_41 -ldflags "-X main.Version=${GITHUB_REF_NAME#v}" -o m4s-converter
+      - name: Package .deb and .tar.gz
+        run: packaging/linux/package.sh app/build/bin/m4s-converter "$GITHUB_REF_NAME" dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/*
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Wails and NSIS
+        shell: pwsh
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) { choco install nsis -y --no-progress }
+          echo "C:\Program Files (x86)\NSIS" >> $env:GITHUB_PATH
+      - name: Build portable exe and installer
+        shell: pwsh
+        working-directory: app
+        run: |
+          $v = "$env:GITHUB_REF_NAME".TrimStart('v')
+          wails build -nsis -ldflags "-X main.Version=$v" -o m4s-converter.exe
+          New-Item -ItemType Directory -Force ../dist | Out-Null
+          Copy-Item build/bin/m4s-converter.exe "../dist/m4s-converter-$v-windows-amd64-portable.exe"
+          Get-ChildItem build/bin/*installer*.exe | ForEach-Object { Copy-Item $_ "../dist/m4s-converter-$v-windows-amd64-setup.exe" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*
+
+  publish:
+    needs: [ linux, windows ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease="--prerelease"; fi
+          gh release create "$GITHUB_REF_NAME" dist/* --title "M4S Converter $GITHUB_REF_NAME" --generate-notes $prerelease
