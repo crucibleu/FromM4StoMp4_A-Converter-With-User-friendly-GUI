@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"m4s-converter/conver"
+	"m4s-converter/internal"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -94,7 +95,7 @@ func (c *Config) Composition(videoFile, audioFile, outputFile string) error {
 		"-add", videoFile+"#video",
 		"-add", audioFile+"#audio",
 		"-new", outputFile)
-	cmd = hideWindow(exec.Command(c.GPACPath, args...))
+	cmd = internal.HideWindow(exec.Command(c.GPACPath, args...))
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -469,7 +470,7 @@ func abs(n int64) int64 {
 func (c *Config) getMp4Metadata(filePath string) (map[string]string, error) {
 	// 构建MP4Box命令行参数
 	args := []string{"-info", filePath}
-	cmd := hideWindow(exec.Command(c.GPACPath, args...))
+	cmd := internal.HideWindow(exec.Command(c.GPACPath, args...))
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout

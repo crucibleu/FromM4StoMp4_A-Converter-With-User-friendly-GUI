@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"m4s-converter/conver"
+	"m4s-converter/internal"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -297,7 +298,7 @@ func (c *Config) findMp4Info(fp, sub string) bool {
 	if !utils.IsExist(c.GPACPath) {
 		return false
 	}
-	ret, err := hideWindow(exec.Command(c.GPACPath, "-info", fp)).CombinedOutput()
+	ret, err := internal.HideWindow(exec.Command(c.GPACPath, "-info", fp)).CombinedOutput()
 	if err != nil {
 		return false
 	}

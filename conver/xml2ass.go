@@ -77,6 +77,36 @@ func Xml2Ass(xml string) string {
 	return dstFile
 }
 
+// XmlToAssFile 将单个xml弹幕文件转换为指定路径的ass字幕文件
+func XmlToAssFile(xmlPath, assPath string, setting Setting) (err error) {
+	src, err := os.Open(xmlPath)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+	dst, err := os.Create(assPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		// xml格式错误时转换库可能panic
+		if r := recover(); r != nil {
+			err = fmt.Errorf("弹幕文件格式错误：%v", r)
+		}
+		if cerr := dst.Close(); err == nil {
+			err = cerr
+		}
+		if err != nil {
+			_ = os.Remove(assPath)
+		}
+	}()
+
+	chain := converter.NewFilterChain()
+	keywordFilter, typeFilter := setting.GetFilter()
+	chain.AddFilter(keywordFilter).AddFilter(typeFilter)
+	return converter.LoadPool(src, chain).Convert(dst, setting.GetAssConfig())
+}
+
 func listXmlFiles(xml string, xmlState os.FileInfo) ([]string, error) {
 	if xmlState.IsDir() {
 		if xml[len(xml)-1] != os.PathSeparator {
