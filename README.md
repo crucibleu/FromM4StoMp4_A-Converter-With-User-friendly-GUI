@@ -12,6 +12,14 @@ bilibili下架了很多视频，之前收藏和缓存的视频均无法播放
 - https://github.com/mzky/m4s-converter/releases/latest
 
 
+### 图形界面版本（Windows / Linux）
+- 双击 `m4s-converter-gui-amd64.exe`（Windows）或 `m4s-converter-gui-linux_amd64`（Linux）即可打开窗口，无需命令行
+- 选择 BiliBili 缓存目录（默认 `视频/bilibili`），点击「开始合成」，完成后可直接打开输出目录
+- 支持弹幕生成、覆盖已合成视频、汇总未合并文件、自定义 MP4Box 等选项，界面随系统语言显示中文或英文
+- 内置 MP4Box，无需另外安装；Linux 选择目录时优先使用系统的 zenity 对话框
+- 编译：`./build-gui.sh`（依赖见脚本内说明，GUI 基于 [Fyne](https://fyne.io)，需要 CGO）
+
+
 ### Android手机端合并文件方法 
 - 详见：[拷贝文件与合成方法](https://github.com/mzky/m4s-converter/issues/9)
 

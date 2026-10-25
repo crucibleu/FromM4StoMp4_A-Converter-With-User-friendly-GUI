@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync/atomic"
 
 	utils "github.com/mzky/utils/common"
 	"github.com/ncruces/zenity"
@@ -36,7 +37,24 @@ type Config struct {
 	Title      string
 	Uname      string
 	GroupTitle string
-	ExitFlag   bool
+	exitFlag   atomic.Bool
+
+	// OnProgress 可选的进度回调（图形界面使用），done/total 仅在 StageMerge 阶段有意义
+	OnProgress func(stage Stage, done, total int, name string)
+}
+
+// Stage 合成任务所处的阶段
+type Stage int
+
+const (
+	StageExtract Stage = iota // 将 m4s 转换为音视频文件
+	StageMerge                // 合成 mp4
+)
+
+func (c *Config) progress(stage Stage, done, total int, name string) {
+	if c.OnProgress != nil {
+		c.OnProgress(stage, done, total, name)
+	}
 }
 
 func (c *Config) overlay() string {
@@ -48,12 +66,12 @@ func (c *Config) overlay() string {
 
 // SetExitFlag 设置退出标志
 func (c *Config) SetExitFlag(flag bool) {
-	c.ExitFlag = flag
+	c.exitFlag.Store(flag)
 }
 
 // ShouldExit 检查是否应该退出
 func (c *Config) ShouldExit() bool {
-	return c.ExitFlag
+	return c.exitFlag.Load()
 }
 func (c *Config) Composition(videoFile, audioFile, outputFile string) error {
 	var cmd *exec.Cmd
@@ -76,7 +94,7 @@ func (c *Config) Composition(videoFile, audioFile, outputFile string) error {
 		"-add", videoFile+"#video",
 		"-add", audioFile+"#audio",
 		"-new", outputFile)
-	cmd = exec.Command(c.GPACPath, args...)
+	cmd = hideWindow(exec.Command(c.GPACPath, args...))
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -101,8 +119,12 @@ func (c *Config) FindM4sFiles(src string, info os.DirEntry, err error) error {
 	if err != nil {
 		return err
 	}
+	if c.ShouldExit() {
+		return filepath.SkipAll
+	}
 	// 查找.m4s文件
 	if strings.HasSuffix(info.Name(), conver.M4sSuffix) {
+		c.progress(StageExtract, 0, 0, info.Name())
 		var dst string
 		videoId, audioId := GetVAId(src)
 		if videoId != "" && audioId != "" {
@@ -114,8 +136,7 @@ func (c *Config) FindM4sFiles(src string, info os.DirEntry, err error) error {
 		}
 
 		if err = c.M4sToAV(src, dst); err != nil {
-			MessageBox(fmt.Sprintf("%v 转换异常：%v", src, err))
-			return err
+			return fmt.Errorf("%v 转换异常：%w", src, err)
 		}
 		logrus.Info("已将m4s转换为音视频文件: ", strings.TrimPrefix(dst, c.CachePath))
 	}
@@ -252,6 +273,11 @@ func (c *Config) M4sToAV(src, dst string) error {
 		return err
 	}
 	return c.copyFile(src, dst)
+}
+
+// CheckCachePath 检查缓存目录及其子目录下是否存在m4s文件
+func (c *Config) CheckCachePath() error {
+	return c.findM4sFiles()
 }
 
 // GetCachePath 获取用户视频缓存路径
@@ -443,7 +469,7 @@ func abs(n int64) int64 {
 func (c *Config) getMp4Metadata(filePath string) (map[string]string, error) {
 	// 构建MP4Box命令行参数
 	args := []string{"-info", filePath}
-	cmd := exec.Command(c.GPACPath, args...)
+	cmd := hideWindow(exec.Command(c.GPACPath, args...))
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -669,6 +695,7 @@ func (c *Config) SelectGPACPath() {
 
 // 如果是目录，尝试下载并转换xml弹幕为ass格式
 func (c *Config) downloadXml() {
+	c.AssPath = "" // 避免沿用上一个视频的弹幕文件
 	dirPath := filepath.Dir(c.video)
 	dirName := filepath.Base(dirPath)
 

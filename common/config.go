@@ -20,7 +20,6 @@ import (
 
 func (c *Config) flag() {
 	var ver bool
-	u, err := user.Current()
 	flaggy.DefaultParser.ShowVersionWithVersionFlag = false
 	flaggy.SetName(color.CyanString("m4s-converter"))
 	flaggy.SetDescription(color.CyanString("BiliBili音视频合成工具."))
@@ -46,17 +45,25 @@ func (c *Config) flag() {
 		}
 		return
 	}
-	c.GPACPath = internal.GetMP4Box()
+	var err error
+	if c.GPACPath, err = internal.GetMP4Box(); err != nil {
+		logrus.Fatal(err)
+	}
 	logrus.Warnln("使用MP4Box进行音视频合成")
 	if c.CachePath == "" {
-		if err != nil {
-			logrus.Warn("获取当前用户失败，使用默认缓存路径: ", err)
-			c.CachePath = filepath.Join("~", "Videos", "bilibili")
-		} else {
-			c.CachePath = filepath.Join(u.HomeDir, "Videos", "bilibili")
-		}
+		c.CachePath = DefaultCachePath()
 	}
 	c.GetCachePath()
+}
+
+// DefaultCachePath 返回 BiliBili 客户端的默认缓存路径
+func DefaultCachePath() string {
+	u, err := user.Current()
+	if err != nil {
+		logrus.Warn("获取当前用户失败，使用默认缓存路径: ", err)
+		return filepath.Join("~", "Videos", "bilibili")
+	}
+	return filepath.Join(u.HomeDir, "Videos", "bilibili")
 }
 func (c *Config) InitConfig() {
 	go c.PanicHandler()

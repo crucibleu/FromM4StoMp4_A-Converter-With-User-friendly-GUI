@@ -2,6 +2,6 @@
 
 package internal
 
-func GetMP4Box() string {
+func GetMP4Box() (string, error) {
 	return getCliPath("MP4Box")
 }
