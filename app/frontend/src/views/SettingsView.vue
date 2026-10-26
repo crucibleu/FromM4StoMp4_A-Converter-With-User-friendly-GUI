@@ -112,7 +112,11 @@ async function pickMP4Box() {
 </template>
 
 <style scoped>
-.settings { padding: 18px 22px 30px; display: grid; gap: 14px; align-content: start; overflow-y: auto; height: 100%; max-width: 860px; }
+/* 滚动区域占满宽度（滚动条在窗口边缘），内容列居中，最宽 860px */
+.settings {
+  padding: 18px 22px 30px; display: grid; gap: 14px; align-content: start; overflow-y: auto; height: 100%;
+  grid-template-columns: minmax(0, 860px); justify-content: center;
+}
 h2 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
 .sec { padding: 16px 18px; display: grid; gap: 12px; }
 .sec h3 { margin: 0; font: 600 11.5px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--signal); }
